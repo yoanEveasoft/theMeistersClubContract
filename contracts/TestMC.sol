@@ -7,6 +7,7 @@ import "erc721a/contracts/ERC721A.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 
 contract TestMC is ERC721A, Ownable  {
@@ -141,10 +142,7 @@ contract TestMC is ERC721A, Ownable  {
        uint256[] calldata _numOfTokens,
        bytes32[] calldata _proof
     ) external payable  isContractPresale {
-        require(
-            verify(_proof, bytes32(uint256(uint160(msg.sender)))),
-            "Not whitelisted"
-        );
+        require(MerkleProof.verify(_proof, _root, keccak256(abi.encode(msg.sender))), "Not whitelisted");
         require(
             categories[1].NFTPrice.mul(_numOfTokens[0]).add(categories[2].NFTPrice.mul(_numOfTokens[1])).add(categories[3].NFTPrice.mul(_numOfTokens[2])) <= msg.value,
             "Ether value sent is not correct"
@@ -185,35 +183,6 @@ contract TestMC is ERC721A, Ownable  {
              }
         }
     }
-
-     // Verify MerkleProof
-    function verify(bytes32[] memory proof, bytes32 leaf)
-        public
-        view
-        returns (bool)
-    {
-        bytes32 computedHash = leaf;
-
-        for (uint256 i = 0; i < proof.length; i++) {
-            bytes32 proofElement = proof[i];
-
-            if (computedHash <= proofElement) {
-                // Hash(current computed hash + current element of the proof)
-                computedHash = sha256(
-                    abi.encodePacked(computedHash, proofElement)
-                );
-            } else {
-                // Hash(current element of the proof + current computed hash)
-                computedHash = sha256(
-                    abi.encodePacked(proofElement, computedHash)
-                );
-            }
-        }
-
-        // Check if the computed hash (root) is equal to the provided root
-        return computedHash == _root;
-    }
-
 
     // Stake function, to stake ur function
     function stakeNFT(uint256 tokenId) external isStakingContract {
