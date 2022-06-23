@@ -45,9 +45,9 @@ contract TestMC is ERC721A, Ownable  {
         categories[1].maxSupply = 299;
         categories[2].maxSupply = 199;
         categories[3].maxSupply = 99;
-        categories[1].whitelistSupply = 30;
+        categories[1].whitelistSupply = 20;
         categories[2].whitelistSupply = 20;
-        categories[3].whitelistSupply = 4;
+        categories[3].whitelistSupply = 20;
         categories[1].NFTPrice = 11 ether;
         categories[2].NFTPrice = 32 ether;
         categories[3].NFTPrice = 98 ether;
@@ -178,11 +178,9 @@ contract TestMC is ERC721A, Ownable  {
             categories[1].NFTPrice.mul(_numOfTokens[0]).add(categories[2].NFTPrice.mul(_numOfTokens[1])).add(categories[3].NFTPrice.mul(_numOfTokens[2])) <= msg.value,
             "Ether value sent is not correct"
         );
-
         for (uint256 i = 0; i < 3 ; i++){
             require((categories[i + 1].maxSupply > categories[i + 1].counterSupply + categories[i + 1].counterWhitelistSupply +_numOfTokens[i]), "the sale max is reached for this nft tier" );
         }
-
         for (uint256 i = 1; i < 4; i++){
                if(_numOfTokens[i-1] != 0){
             for(uint256 j = 0; j <  _numOfTokens[i-1]; j++){
