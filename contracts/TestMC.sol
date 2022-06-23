@@ -235,7 +235,7 @@ contract TestMC is ERC721A, Ownable  {
 
     // tokenURI is the link to the metadatas
     function tokenURI(uint _tokenId) public view virtual override returns (string memory) {
-        require(_exists(_tokenId), "URI query for nonexistent token");
+        require(NFTcategory[_tokenId] > 0, "URI query for nonexistent token");
         if(isRevealed == true) {
             return string(abi.encodePacked(baseURI, _tokenId.toString(), ".json"));
         }
