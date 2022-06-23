@@ -11,94 +11,104 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract TestMC is ERC721A, Ownable  {
 
-        using Strings for uint;
-        using SafeMath for uint256;
+    using Strings for uint;
+    using SafeMath for uint256;
 
-        address public stakingContract;
-        bytes32 public _root;
-        bool public isActive;
-        bool public isPresaleActive;
-        string public baseURI;
-        bool private isRevealed = false;
+    address public stakingContract;
+    bytes32 public _root;
+    bool public isActive;
+    bool public isPresaleActive;
+    string public baseURI;
+    bool private isRevealed = false;
 
-        struct Category {
-        uint256 maxSupply;
-        uint256 whitelistSupply;
-        uint256 counterSupply;
-        uint256 counterWhitelistSupply;
-        uint256 NFTPrice;
+    struct Category {
+    uint256 maxSupply;
+    uint256 whitelistSupply;
+    uint256 counterSupply;
+    uint256 counterWhitelistSupply;
+    uint256 NFTPrice;
+}
+
+    // Mapping category/info
+    mapping(uint256 => Category) public categories;
+
+    // Mapping id/category
+    mapping(uint256 => uint256) public NFTcategory;
+
+    // Is staked?
+    mapping(uint256 => bool) public isStaked;
+
+
+    constructor( string memory _baseURI) ERC721A("TestMC", "TESTMC") {
+        baseURI = _baseURI;
+        categories[1].maxSupply = 299;
+        categories[2].maxSupply = 199;
+        categories[3].maxSupply = 99;
+        categories[1].whitelistSupply = 30;
+        categories[2].whitelistSupply = 20;
+        categories[3].whitelistSupply = 4;
+        categories[1].NFTPrice = 11 ether;
+        categories[2].NFTPrice = 32 ether;
+        categories[3].NFTPrice = 98 ether;
     }
 
-        // Mapping category/info
-        mapping(uint256 => Category) public categories;
+    modifier isStakingContract {
+        require(msg.sender == stakingContract);
+        _;
+    }
+    modifier isContractPublicSale {
+        require(isActive == true, "Contract is not active");
+        require(isPresaleActive == false, "Presale is still active");
+        _;
+    }
+    modifier isContractPresale {
+        require(isActive == true, "Contract is not active");
+        require(isPresaleActive == true, "Presale is not opened yet");
+        _;
+    }
 
-        // Mapping id/category
-        mapping(uint256 => uint256) public NFTcategory;
+    function setMerkleRoot(bytes32 root) public onlyOwner {
+        _root = root;
+    }
 
-        // Is staked?
-        mapping(uint256 => bool) public isStaked;
+    function setBaseUri(string memory _baseURI) external onlyOwner {
+        baseURI = _baseURI;
+    }
 
+    function setIsActive() external onlyOwner {
+            isActive = !isActive;
+    }
 
-        constructor( string memory _baseURI) ERC721A("TestMC", "TESTMC") {
-            baseURI = _baseURI;
-            categories[1].maxSupply = 299;
-            categories[2].maxSupply = 199;
-            categories[3].maxSupply = 99;
-            categories[1].whitelistSupply = 30;
-            categories[2].whitelistSupply = 20;
-            categories[3].whitelistSupply = 4;
-            categories[1].NFTPrice = 11 ether;
-            categories[2].NFTPrice = 32 ether;
-            categories[3].NFTPrice = 98 ether;
-        }
+    function setPresaleActive() external onlyOwner {
+        isPresaleActive = !isPresaleActive;
+    }
 
-          modifier isStakingContract {
-            require(msg.sender == stakingContract);
-            _;
-        }
+    function setRevealCollection() external onlyOwner {
+        isRevealed = true;
+    }
 
-        function setMerkleRoot(bytes32 root) public onlyOwner {
-            _root = root;
-        }
-
-        function setBaseUri(string memory _baseURI) external onlyOwner {
-            baseURI = _baseURI;
-        }
-
-        function setIsActive() external onlyOwner {
-             isActive = !isActive;
-        }
-
-        function setPresaleActive() external onlyOwner {
-            isPresaleActive = !isPresaleActive;
-        }
-
-        function setRevealCollection() external onlyOwner {
-            isRevealed = true;
-        }
-
-        // Function to change the supply of the selected categories
-        function changeSupply( uint256[] calldata newSupplies) external onlyOwner{
-            for (uint256 i = 0; i < 3 ; i++){
-                if(newSupplies[i] != 0){
-                    require(newSupplies[i] > categories[i + 1].counterSupply, "new supply is inferior to actual minted supply");
-                    categories[i + 1].maxSupply = newSupplies[i];
-                }
+    // Function to change the supply of the selected categories
+    function changeSupply( uint256[] calldata newSupplies) external onlyOwner{
+        for (uint256 i = 0; i < 3 ; i++){
+            if(newSupplies[i] != 0){
+                require(newSupplies[i] > categories[i + 1].counterSupply, "new supply is inferior to actual minted supply");
+                categories[i + 1].maxSupply = newSupplies[i];
             }
         }
+    }
 
-           // Function to change the price of the selected categories
-        function changePrice( uint256[] calldata newPrices ) external onlyOwner{
+    // Function to change the price of the selected categories
+    function changePrice( uint256[] calldata newPrices ) external onlyOwner{
             for (uint256 i = 0; i < 3 ; i++){
                 if(newPrices[i] != 0){
                     categories[i + 1].NFTPrice = newPrices[i];
                 }
             }
-        }
+    }
  
-    /*
-     * Function to mint NFTs for giveaway and partnerships
-     */
+    
+
+    // Function to mint NFTs for giveaway and partnerships
     function mintByOwner(address _to, uint NFTtier) public onlyOwner {
         require(NFTtier < 4 && 0 < NFTtier, "Category is wrong");   
         require(
@@ -110,9 +120,8 @@ contract TestMC is ERC721A, Ownable  {
         _safeMint(_to, 1);
     }
 
-    /*
-     * Function to mint all NFTs for giveaway and partnerships
-     */
+    
+    // Function to mint all NFTs for giveaway and partnerships
     function mintMultipleByOwner(address[] memory _to, uint256[] calldata NFTtier) public onlyOwner {
         for (uint256 i = 0; i < _to.length; i++) {
             require(NFTtier[i] < 4 && 0 < NFTtier[i], "Category is wrong");
@@ -130,11 +139,8 @@ contract TestMC is ERC721A, Ownable  {
     // function for presale mint (whitelist)
     function presaleMint(
        uint256[] calldata _numOfTokens,
-        bytes32[] calldata _proof
-    ) external payable {
-
-        require(isActive, "Contract is not active");
-        require(isPresaleActive, "Presale is not opened yet");
+       bytes32[] calldata _proof
+    ) external payable  isContractPresale {
         require(
             verify(_proof, bytes32(uint256(uint160(msg.sender)))),
             "Not whitelisted"
@@ -149,19 +155,18 @@ contract TestMC is ERC721A, Ownable  {
         }
 
         for (uint256 i = 1; i < 4 ; i++){
-        for(uint256 j = 0; j <  _numOfTokens[i-1]; j++){
+            if(_numOfTokens[i-1] != 0){
+            for(uint256 j = 0; j <  _numOfTokens[i-1]; j++){
             categories[i].counterWhitelistSupply ++;
             NFTcategory[totalSupply()] = i;
-            _safeMint(msg.sender, 1);
             }
-        
+            _safeMint(msg.sender, _numOfTokens[i-1]);
+            }
         }
     }
 
     // function for regular mint
-   function mintNFT(uint256[] calldata _numOfTokens ) public payable {
-        require(isActive, "Contract is not active");
-        require(!isPresaleActive, "Presale is still active");
+   function mintNFT(uint256[] calldata _numOfTokens ) public payable isContractPublicSale {
         require(
             categories[1].NFTPrice.mul(_numOfTokens[0]).add(categories[2].NFTPrice.mul(_numOfTokens[1])).add(categories[3].NFTPrice.mul(_numOfTokens[2])) <= msg.value,
             "Ether value sent is not correct"
@@ -173,13 +178,10 @@ contract TestMC is ERC721A, Ownable  {
 
         for (uint256 i = 1; i < 4; i++){
             for(uint256 j = 0; j <  _numOfTokens[i-1]; j++){
-                   require(
-            categories[i].counterSupply + 1 <= categories[i].maxSupply,
-            "Tokens number to mint cannot exceed number of MAX tokens category 3"
-        );
+            
             categories[i].counterSupply ++;
             NFTcategory[totalSupply()] = i;
-                   _safeMint(msg.sender, 1);
+            _safeMint(msg.sender, 1);
              }
         }
     }
