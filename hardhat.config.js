@@ -2,7 +2,7 @@ require("dotenv").config();
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-waffle");
-
+require("hardhat-gas-reporter");
 
 const { PRIVATE_KEY } = process.env;
 
@@ -26,7 +26,7 @@ module.exports = {
       accounts: [`0x${PRIVATE_KEY}`],
     },
     rinkeby: {
-      url: /* "https://eth-rinkeby.alchemyapi.io/v2/LsdjIhhDskpuzoIgg78Rs7BI3mzbdIZJ", */"https://rinkeby.infura.io/v3/03ce6aff8f9b46b8bb3ebf13b2900c71",
+      url: /* "https://eth-rinkeby.alchemyapi.io/v2/LsdjIhhDskpuzoIgg78Rs7BI3mzbdIZJ", */ "https://rinkeby.infura.io/v3/03ce6aff8f9b46b8bb3ebf13b2900c71",
       accounts: [`0x${PRIVATE_KEY}`],
     },
     ethereum: {
@@ -37,14 +37,17 @@ module.exports = {
       url: "https://speedy-nodes-nyc.moralis.io/efad5f42b02dc2f894f286f8/polygon/mumbai",
       accounts: [`0x${PRIVATE_KEY}`],
     },
-  /*   mumbai: {
+    /*   mumbai: {
       url: process.env.MUMBAI_URL,
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     }, */
   },
+  gasReporter: {
+    currency: "USD",
+    gasPrice: 50,
+  },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
   },
-  
 };
