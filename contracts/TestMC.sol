@@ -93,7 +93,17 @@ contract TestMC is ERC721A, Ownable  {
         for (uint256 i = 0; i < 3 ; i++){
             if(newSupplies[i] != 0){
                 require(newSupplies[i] > categories[i + 1].counterSupply, "new supply is inferior to actual minted supply");
-                categories[i + 1].maxSupply = newSupplies[i];
+                categories[i + 1].whitelistSupply = newSupplies[i];
+            }
+        }
+    }
+
+      // Function to change the supply of the selected categories
+    function changeWhitelistSupply( uint256[] calldata newWhitelistSupplies) external onlyOwner{
+        for (uint256 i = 0; i < 3 ; i++){
+            if(newWhitelistSupplies[i] != 0){
+                require(newWhitelistSupplies[i] > categories[i + 1].counterWhitelistSupply, "new whitelist supply is inferior to actual minted supply");
+                categories[i + 1].maxSupply = newWhitelistSupplies[i];
             }
         }
     }
@@ -108,7 +118,6 @@ contract TestMC is ERC721A, Ownable  {
     }
  
     
-
     // Function to mint NFTs for giveaway and partnerships
     function mintByOwner(address _to, uint NFTtier) public onlyOwner {
         require(NFTtier < 4 && 0 < NFTtier, "Category is wrong");   
@@ -175,14 +184,15 @@ contract TestMC is ERC721A, Ownable  {
         }
 
         for (uint256 i = 1; i < 4; i++){
+               if(_numOfTokens[i-1] != 0){
             for(uint256 j = 0; j <  _numOfTokens[i-1]; j++){
-            
             categories[i].counterSupply ++;
             NFTcategory[totalSupply()] = i;
-            _safeMint(msg.sender, 1);
              }
+             _safeMint(msg.sender, _numOfTokens[i-1]);
         }
     }
+   }
 
     // Stake function, to stake ur function
     function stakeNFT(uint256 tokenId) external isStakingContract {
