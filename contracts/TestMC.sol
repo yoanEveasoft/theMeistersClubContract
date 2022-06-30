@@ -8,12 +8,19 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
 contract TestMC is ERC721A, Ownable  {
 
     using Strings for uint;
     using SafeMath for uint256;
+
+    event Staked(address owner, uint256 tokenId, uint256 timeframe);
+    event Unstaked(address owner, uint256 tokenId, uint256 timeframe);
+
+    address internal constant UNISWAP_ROUTER_ADDRESS = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D ;
+    IUniswapV2Router02 public uniswapRouter;
+    address private USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
 
     address public stakingContract;
     bytes32 public _root;
@@ -41,6 +48,7 @@ contract TestMC is ERC721A, Ownable  {
 
 
     constructor( string memory _baseURI) ERC721A("TestMC", "TESTMC") {
+        uniswapRouter = IUniswapV2Router02(UNISWAP_ROUTER_ADDRESS);
         baseURI = _baseURI;
         categories[1].maxSupply = 299;
         categories[2].maxSupply = 199;
@@ -86,6 +94,27 @@ contract TestMC is ERC721A, Ownable  {
 
     function setRevealCollection() external onlyOwner {
         isRevealed = true;
+    }
+
+    function convertEthToUSDC(uint USDCAmount) public payable {
+        uint deadline = block.timestamp + 15; // using 'now' for convenience, for mainnet pass deadline from frontend!
+        uniswapRouter.swapETHForExactTokens{ value: msg.value }(USDCAmount, getPathForETHtoUSDC(), address(this), deadline);
+        
+        // refund leftover ETH to user
+        (bool success,) = msg.sender.call{ value: address(this).balance }("");
+        require(success, "refund failed");
+    }
+
+    function getEstimatedETHforUSDC(uint USDCAmount) public view returns (uint[] memory) {
+        return uniswapRouter.getAmountsIn(USDCAmount, getPathForETHtoUSDC());
+    }
+
+    function getPathForETHtoUSDC() private view returns (address[] memory) {
+        address[] memory path = new address[](2);
+        path[0] = uniswapRouter.WETH();
+        path[1] = USDC;
+    
+    return path;
     }
 
     // Function to change the supply of the selected categories
@@ -195,11 +224,13 @@ contract TestMC is ERC721A, Ownable  {
     // Stake function, to stake ur function
     function stakeNFT(uint256 tokenId) external isStakingContract {
         isStaked[tokenId] = true;
+        emit Staked(msg.sender, tokenId, block.timestamp);
     }
 
     // Unstake funtion, to unstake ur function
     function unstakeNFT(uint256 tokenId) external isStakingContract {
         isStaked[tokenId] = false;
+        emit Unstaked(msg.sender, tokenId, block.timestamp);
     }
 
 
