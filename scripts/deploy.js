@@ -4,18 +4,18 @@ async function main() {
   console.log("Deploying contracts with the account:", deployer.address);
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
-  
-  
+
+  const Mock = await ethers.getContractFactory("Mock");
   const Test = await ethers.getContractFactory("TestMC");
 
+  const Mockv2 = await Test.deploy();
 
-  const Testv2 = await Test.deploy("test", "0xd8350Cf2c9224f2720B68585fea8Cea2abB0DEdC");
+  const Testv2 = await Test.deploy("test", Mockv2.address);
 
   console.log("Contract deployed to address:", Testv2.address);
 
   //'0x0000000000000000000000000000000000000000000000000000000000000000'
   //'0x1d51f9a04ebff61f265429c4d22ac3e6176effaa85229f4c272875d39487386e'
-  
 }
 
 main()

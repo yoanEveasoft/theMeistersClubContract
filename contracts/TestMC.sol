@@ -8,7 +8,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+
+import "hardhat/console.sol";
+
+interface ITwap{
+    function getPrice(address tokenIn, uint256 amountIn) external view returns (uint);
+}
+
 
 contract TestMC is ERC721A, Ownable  {
 
@@ -18,16 +24,16 @@ contract TestMC is ERC721A, Ownable  {
     event Staked(address owner, uint256 tokenId, uint256 timeframe);
     event Unstaked(address owner, uint256 tokenId, uint256 timeframe);
 
-    address internal constant UNISWAP_ROUTER_ADDRESS = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D ;
-    IUniswapV2Router02 public uniswapRouter;
-    address private USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-
     address public stakingContract;
+    address public twapContract;
     bytes32 public _root;
     bool public isActive;
     bool public isPresaleActive;
     string public baseURI;
     bool private isRevealed = false;
+    //WETH
+    address token1 = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    uint128 decimals1 = 10 ** 18;
 
     struct Category {
     uint256 maxSupply;
@@ -47,18 +53,18 @@ contract TestMC is ERC721A, Ownable  {
     mapping(uint256 => bool) public isStaked;
 
 
-    constructor( string memory _baseURI) ERC721A("TestMC", "TESTMC") {
-        uniswapRouter = IUniswapV2Router02(UNISWAP_ROUTER_ADDRESS);
+    constructor( string memory _baseURI, address _twapContract ) ERC721A("TestMC", "TESTMC") {
         baseURI = _baseURI;
+        twapContract = _twapContract;
         categories[1].maxSupply = 299;
         categories[2].maxSupply = 199;
         categories[3].maxSupply = 99;
         categories[1].whitelistSupply = 20;
         categories[2].whitelistSupply = 20;
         categories[3].whitelistSupply = 20;
-        categories[1].NFTPrice = 11 ether;
-        categories[2].NFTPrice = 32 ether;
-        categories[3].NFTPrice = 98 ether;
+        categories[1].NFTPrice = 8000 * 10**6; // 8.000 USDC
+        categories[2].NFTPrice = 18000 * 10**6; // 18.000 USDC
+        categories[3].NFTPrice = 100000 * 10**6; // 100.000 USDC
     }
 
     modifier isStakingContract {
@@ -96,27 +102,6 @@ contract TestMC is ERC721A, Ownable  {
         isRevealed = true;
     }
 
-    function convertEthToUSDC(uint USDCAmount) public payable {
-        uint deadline = block.timestamp + 15; // using 'now' for convenience, for mainnet pass deadline from frontend!
-        uniswapRouter.swapETHForExactTokens{ value: msg.value }(USDCAmount, getPathForETHtoUSDC(), address(this), deadline);
-        
-        // refund leftover ETH to user
-        (bool success,) = msg.sender.call{ value: address(this).balance }("");
-        require(success, "refund failed");
-    }
-
-    function getEstimatedETHforUSDC(uint USDCAmount) public view returns (uint[] memory) {
-        return uniswapRouter.getAmountsIn(USDCAmount, getPathForETHtoUSDC());
-    }
-
-    function getPathForETHtoUSDC() private view returns (address[] memory) {
-        address[] memory path = new address[](2);
-        path[0] = uniswapRouter.WETH();
-        path[1] = USDC;
-    
-    return path;
-    }
-
     // Function to change the supply of the selected categories
     function changeSupply( uint256[] calldata newSupplies) external onlyOwner{
         for (uint256 i = 0; i < 3 ; i++){
@@ -138,13 +123,15 @@ contract TestMC is ERC721A, Ownable  {
     }
 
     // Function to change the price of the selected categories
-    function changePrice( uint256[] calldata newPrices ) external onlyOwner{
+    function changePrice( uint128[] calldata newPrices ) external onlyOwner{
             for (uint256 i = 0; i < 3 ; i++){
                 if(newPrices[i] != 0){
                     categories[i + 1].NFTPrice = newPrices[i];
                 }
             }
     }
+
+      
  
     
     // Function to mint NFTs for giveaway and partnerships
@@ -181,11 +168,13 @@ contract TestMC is ERC721A, Ownable  {
        bytes32[] calldata _proof
     ) external payable  isContractPresale {
         require(MerkleProof.verify(_proof, _root, keccak256(abi.encode(msg.sender))), "Not whitelisted");
+        uint256 totalPrice = categories[1].NFTPrice.mul(_numOfTokens[0]).add(categories[2].NFTPrice.mul(_numOfTokens[1])).add(categories[3].NFTPrice.mul(_numOfTokens[2]));
+        uint256 ethInUSDT = ITwap(twapContract).getPrice(token1, totalPrice);
         require(
-            categories[1].NFTPrice.mul(_numOfTokens[0]).add(categories[2].NFTPrice.mul(_numOfTokens[1])).add(categories[3].NFTPrice.mul(_numOfTokens[2])) <= msg.value,
+            totalPrice <= msg.value * ethInUSDT,
             "Ether value sent is not correct"
         );
-
+       
         for (uint256 i = 0; i < 3 ; i++){
             require((categories[i + 1].whitelistSupply > categories[i + 1].counterWhitelistSupply +_numOfTokens[i]), "the presale max is reached for this nft tier");
         }
@@ -203,8 +192,10 @@ contract TestMC is ERC721A, Ownable  {
 
     // function for regular mint
    function mintNFT(uint256[] calldata _numOfTokens ) public payable isContractPublicSale {
+       uint256 totalPrice = categories[1].NFTPrice.mul(_numOfTokens[0]).add(categories[2].NFTPrice.mul(_numOfTokens[1])).add(categories[3].NFTPrice.mul(_numOfTokens[2]));
+       uint256 ethInUSDT = ITwap(twapContract).getPrice(token1, totalPrice);
         require(
-            categories[1].NFTPrice.mul(_numOfTokens[0]).add(categories[2].NFTPrice.mul(_numOfTokens[1])).add(categories[3].NFTPrice.mul(_numOfTokens[2])) <= msg.value,
+            totalPrice <= msg.value * ethInUSDT,
             "Ether value sent is not correct"
         );
         for (uint256 i = 0; i < 3 ; i++){

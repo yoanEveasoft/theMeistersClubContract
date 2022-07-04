@@ -13,6 +13,14 @@ const isFreeMint = false;
 const isPublicSale = true;
 const maxSupply = 10000;
 
+const pool = "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8";
+//USDC
+const token0 = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+const decimals0 = 6n;
+//WETH
+const token1 = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+const decimals1 = 18n;
+
 describe("TestMC", function () {
   let Contract;
   let owner;
@@ -20,11 +28,25 @@ describe("TestMC", function () {
 
   beforeEach(async function () {
     [owner, ...accounts] = await ethers.getSigners();
+    const UniswapV3 = await ethers.getContractFactory("Twap");
+    const twap = await UniswapV3.deploy();
     const contract = await ethers.getContractFactory("TestMC");
-    Contract = await contract.deploy("/test");
-    price1 = await (await Contract.categories(1))["NFTPrice"];
-    price2 = await (await Contract.categories(2))["NFTPrice"];
-    price3 = await (await Contract.categories(3))["NFTPrice"];
+    Contract = await contract.deploy("/test", twap.address);
+    price1 = await (
+      await (
+        await Contract.categories(1)
+      )["NFTPrice"]
+    ).toString();
+    price2 = await (
+      await (
+        await Contract.categories(2)
+      )["NFTPrice"]
+    ).toString();
+    price3 = await (
+      await (
+        await Contract.categories(3)
+      )["NFTPrice"]
+    ).toString();
   });
 
   describe("Deployment", function () {
@@ -155,7 +177,7 @@ describe("TestMC", function () {
         await Contract.setPresaleActive();
         await expect(
           Contract.connect(accounts[1]).mintNFT([1, 0, 0], {
-            value: await (price1 * 2).toString(),
+            value: await (price1 * 1).toString(),
           })
         ).to.be.revertedWith("Presale is still active");
       });
