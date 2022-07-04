@@ -29,7 +29,7 @@ describe("TestMC", function () {
   beforeEach(async function () {
     [owner, ...accounts] = await ethers.getSigners();
     const UniswapV3 = await ethers.getContractFactory("Twap");
-    const twap = await UniswapV3.deploy();
+    const twap = await UniswapV3.deploy(token0, token1, pool);
     const contract = await ethers.getContractFactory("TestMC");
     Contract = await contract.deploy("/test", twap.address);
     price1 = await (
@@ -161,7 +161,7 @@ describe("TestMC", function () {
         await Contract.setPresaleActive();
         expect(
           await Contract.connect(accounts[1]).presaleMint([0, 0, 5], proof, {
-            value: await (price3 * 5).toString(),
+            value: price3 * 5,
           })
         ).to.be.revertedWith("the presale max is reached for this nft tier");
       });
@@ -271,8 +271,8 @@ describe("TestMC", function () {
         console.log("owner balance before withdraw:", ownerBalance);
         await expect(
           (await (await provider.getBalance(Contract.address)).toString()) /
-            1000000000000000000
-        ).to.equal(379);
+            1000000
+        ).to.equal(312000);
 
         await Contract.connect(owner).withdraw();
 
