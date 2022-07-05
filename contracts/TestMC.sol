@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.4;
 
 
 import "erc721a/contracts/ERC721A.sol";
@@ -11,8 +11,8 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import "hardhat/console.sol";
 
-interface ITwap{
-    function getPrice(address tokenIn, uint256 amountIn) external view returns (uint);
+interface ITwap {
+    function getPrice(address tokenIn, uint128 amountIn) external  returns (uint);
 }
 
 
@@ -107,7 +107,7 @@ contract TestMC is ERC721A, Ownable  {
         for (uint256 i = 0; i < 3 ; i++){
             if(newSupplies[i] != 0){
                 require(newSupplies[i] > categories[i + 1].counterSupply, "new supply is inferior to actual minted supply");
-                categories[i + 1].whitelistSupply = newSupplies[i];
+                categories[i + 1].maxSupply = newSupplies[i];
             }
         }
     }
@@ -117,7 +117,7 @@ contract TestMC is ERC721A, Ownable  {
         for (uint256 i = 0; i < 3 ; i++){
             if(newWhitelistSupplies[i] != 0){
                 require(newWhitelistSupplies[i] > categories[i + 1].counterWhitelistSupply, "new whitelist supply is inferior to actual minted supply");
-                categories[i + 1].maxSupply = newWhitelistSupplies[i];
+                categories[i + 1].whitelistSupply = newWhitelistSupplies[i];
             }
         }
     }
@@ -126,7 +126,7 @@ contract TestMC is ERC721A, Ownable  {
     function changePrice( uint128[] calldata newPrices ) external onlyOwner{
             for (uint256 i = 0; i < 3 ; i++){
                 if(newPrices[i] != 0){
-                    categories[i + 1].NFTPrice = newPrices[i];
+                    categories[i + 1].NFTPrice = newPrices[i] * 10**6;
                 }
             }
     }
@@ -169,7 +169,7 @@ contract TestMC is ERC721A, Ownable  {
     ) external payable  isContractPresale {
         require(MerkleProof.verify(_proof, _root, keccak256(abi.encode(msg.sender))), "Not whitelisted");
         uint256 totalPrice = categories[1].NFTPrice.mul(_numOfTokens[0]).add(categories[2].NFTPrice.mul(_numOfTokens[1])).add(categories[3].NFTPrice.mul(_numOfTokens[2]));
-        uint256 ethInUSDT = ITwap(twapContract).getPrice(token1, totalPrice);
+        uint ethInUSDT = ITwap(twapContract).getPrice(token1, decimals1);
         require(
             totalPrice <= msg.value * ethInUSDT,
             "Ether value sent is not correct"
@@ -193,7 +193,7 @@ contract TestMC is ERC721A, Ownable  {
     // function for regular mint
    function mintNFT(uint256[] calldata _numOfTokens ) public payable isContractPublicSale {
        uint256 totalPrice = categories[1].NFTPrice.mul(_numOfTokens[0]).add(categories[2].NFTPrice.mul(_numOfTokens[1])).add(categories[3].NFTPrice.mul(_numOfTokens[2]));
-       uint256 ethInUSDT = ITwap(twapContract).getPrice(token1, totalPrice);
+       uint ethInUSDT = ITwap(twapContract).getPrice(token1, decimals1);
         require(
             totalPrice <= msg.value * ethInUSDT,
             "Ether value sent is not correct"

@@ -8,11 +8,7 @@ const { PRIVATE_KEY } = process.env;
 
 module.exports = {
   solidity: {
-    version: "0.7.6",
-    version: "0.8.7",
-    version: "0.8.12",
-    version: "0.8.13",
-    version: "0.8.14",
+    compilers: [{ version: "0.7.6" }, { version: "0.8.14" }],
     settings: {
       optimizer: {
         enabled: false,
@@ -24,7 +20,9 @@ module.exports = {
     hardhat: {},
     localhost: {
       url: "http://127.0.0.1:8545/",
-      accounts: [`0x${PRIVATE_KEY}`],
+      accounts: [
+        `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80`,
+      ],
     },
     rinkeby: {
       url: /* "https://eth-rinkeby.alchemyapi.io/v2/LsdjIhhDskpuzoIgg78Rs7BI3mzbdIZJ", */ "https://rinkeby.infura.io/v3/03ce6aff8f9b46b8bb3ebf13b2900c71",
