@@ -34,7 +34,6 @@ async function forkNetwork(blockNumber = 15082955) {
 
 describe("TestMC", function () {
   let Contract;
-  let accounts;
   forkNetwork();
 
   beforeEach(async function () {
@@ -52,8 +51,6 @@ describe("TestMC", function () {
       "0x1000000000000000000000000000",
     ]);
 
-    const UniswapV3 = await ethers.getContractFactory("Twap");
-    const twap = await UniswapV3.deploy(token0, token1, pool);
     const contract = await ethers.getContractFactory("TestMC");
     Contract = await contract.deploy("/test", pool);
     price1 =
@@ -66,11 +63,9 @@ describe("TestMC", function () {
       (await (await (await Contract.categories(3))["NFTPrice"]).toString()) /
       10 ** 6;
 
-    preMarginEthInUSDC =
-      (await (await twap.getPrice(token1, 10n ** decimals1)).toString()) /
-      10 ** 6;
-
-    ethInUSDC = preMarginEthInUSDC * 0.95;
+    sqrtPriceX96 = await Contract.getPrice();
+    preMarginEthInUSDC = (10 ** 12 * 2 ** 192) / sqrtPriceX96 ** 2;
+    ethInUSDC = preMarginEthInUSDC * 0.98;
   });
 
   describe("Deployment", function () {
@@ -148,9 +143,7 @@ describe("TestMC", function () {
 
         expect(
           await Contract.presaleMint([2, 0, 0], proof, {
-            value: await await ethers.utils
-              .parseEther("" + price1 / ethInUSDC)
-              .toString(),
+            value: await ethers.utils.parseEther("" + price1 / ethInUSDC),
           })
         );
         expect(await Contract.ownerOf(0)).to.equal(users[0].address);
@@ -161,11 +154,9 @@ describe("TestMC", function () {
         await Contract.setPresaleActive();
         expect(
           await Contract.presaleMint([2, 1, 1], proof, {
-            value: await await ethers.utils
-              .parseEther(
-                "" + (price1 * 2 + price2 * 1 + price3 * 1) / ethInUSDC
-              )
-              .toString(),
+            value: await ethers.utils.parseEther(
+              "" + (price1 * 2 + price2 * 1 + price3 * 1) / ethInUSDC
+            ),
           })
         );
         expect(await Contract.ownerOf(0)).to.equal(users[0].address);
@@ -193,9 +184,9 @@ describe("TestMC", function () {
         await Contract.setPresaleActive();
         expect(
           await Contract.connect(users[0]).presaleMint([21, 0, 0], proof, {
-            value: await await ethers.utils
-              .parseEther("" + (price1 * 21) / ethInUSDC)
-              .toString(),
+            value: await ethers.utils.parseEther(
+              "" + (price1 * 21) / ethInUSDC
+            ),
           })
         ).to.be.revertedWith("the presale max is reached for this nft tier");
       });
@@ -227,9 +218,7 @@ describe("TestMC", function () {
       it("Should mint 2 NFT", async function () {
         expect(
           await Contract.connect(users[1]).mintNFT([2, 0, 0], {
-            value: await await ethers.utils
-              .parseEther("" + (price1 * 2) / ethInUSDC)
-              .toString(),
+            value: await ethers.utils.parseEther("" + (price1 * 2) / ethInUSDC),
           })
         );
         expect(await Contract.ownerOf(0)).to.equal(users[1].address);
@@ -240,11 +229,9 @@ describe("TestMC", function () {
       it("Should mint multiple differents NFT", async function () {
         expect(
           await Contract.connect(users[0]).mintNFT([2, 1, 1], {
-            value: await await ethers.utils
-              .parseEther(
-                "" + (price1 * 2 + price2 * 1 + price3 * 1) / ethInUSDC
-              )
-              .toString(),
+            value: await ethers.utils.parseEther(
+              "" + (price1 * 2 + price2 * 1 + price3 * 1) / ethInUSDC
+            ),
           })
         );
         expect(await Contract.ownerOf(0)).to.equal(users[0].address);

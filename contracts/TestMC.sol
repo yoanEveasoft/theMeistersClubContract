@@ -112,12 +112,11 @@ contract TestMC is ERC721A, Ownable  {
         isRevealed = true;
     }
 
-       function getPrice() public view  returns (uint256) {
+    function getPrice() public view  returns (uint256) {
         StructLib.Slot memory slot = IUniswapPrice(poolContract).slot0();
         uint256 sqrtPriceX96 = uint256(slot.sqrtPriceX96);
         return sqrtPriceX96;
     } 
-
 
     // Function to change the supply of the selected categories
     function changeSupply( uint256[] calldata newSupplies) external onlyOwner{
