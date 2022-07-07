@@ -38,15 +38,12 @@ contract TestMC is ERC721A, Ownable  {
     event Unstaked(address owner, uint256 tokenId, uint256 timeframe);
 
     address public stakingContract;
-    address public twapContract;
+    address public poolContract;
     bytes32 public _root;
     bool public isActive;
     bool public isPresaleActive;
     string public baseURI;
     bool private isRevealed = false;
-    //WETH
-    address token1 = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    uint128 decimals1 = 10 ** 18;
 
     struct Category {
     uint256 maxSupply;
@@ -66,9 +63,9 @@ contract TestMC is ERC721A, Ownable  {
     mapping(uint256 => bool) public isStaked;
 
 
-    constructor( string memory _baseURI, address _twapContract ) ERC721A("TestMC", "TESTMC") {
+    constructor( string memory _baseURI, address _poolContract ) ERC721A("TestMC", "TESTMC") {
         baseURI = _baseURI;
-        twapContract = _twapContract;
+        poolContract = _poolContract;
         categories[1].maxSupply = 299;
         categories[2].maxSupply = 199;
         categories[3].maxSupply = 99;
@@ -116,7 +113,7 @@ contract TestMC is ERC721A, Ownable  {
     }
 
        function getPrice() public view  returns (uint160) {
-        StructLib.Slot memory slot = IUniswapPrice(twapContract).slot0();
+        StructLib.Slot memory slot = IUniswapPrice(poolContract).slot0();
         return slot.sqrtPriceX96;
     } 
 
