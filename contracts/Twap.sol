@@ -5,6 +5,10 @@ pragma solidity 0.7.6 ;
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol";
 
+interface ITwap {
+    function getPrice(address tokenIn, uint128 amountIn) external  returns (uint);
+}
+
 contract Twap  {
 
     uint32 twapInterval = 30;

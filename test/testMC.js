@@ -55,7 +55,7 @@ describe("TestMC", function () {
     const UniswapV3 = await ethers.getContractFactory("Twap");
     const twap = await UniswapV3.deploy(token0, token1, pool);
     const contract = await ethers.getContractFactory("TestMC");
-    Contract = await contract.deploy("/test", twap.address);
+    Contract = await contract.deploy("/test", pool);
     price1 =
       (await (await (await Contract.categories(1))["NFTPrice"]).toString()) /
       10 ** 6;
@@ -66,16 +66,18 @@ describe("TestMC", function () {
       (await (await (await Contract.categories(3))["NFTPrice"]).toString()) /
       10 ** 6;
 
-    ethInUSDC =
+    preMarginEthInUSDC =
       (await (await twap.getPrice(token1, 10n ** decimals1)).toString()) /
       10 ** 6;
+
+    ethInUSDC = preMarginEthInUSDC * 0.95;
   });
 
-  describe("Deployment", function () {
+  /* describe("Deployment", function () {
     it("Should set the right users[0]", async function () {
       expect(await Contract.owner()).to.equal(users[0].address);
     });
-  });
+  }); */
 
   describe("Giveaways", function () {
     it("Should mint 99 giveaways", async function () {
@@ -387,12 +389,14 @@ describe("TestMC", function () {
       await Contract.setIsActive();
       await expect(
         await Contract.connect(users[1]).mintNFT([1, 0, 0], {
-          value: await (price1 * 1).toString(),
+          value: await ethers.utils.parseEther("" + (price1 * 1) / ethInUSDC),
         })
       );
       await expect(
         await Contract.connect(users[1]).mintNFT([0, 1, 1], {
-          value: await (price2 * 1 + price3 * 1).toString(),
+          value: await ethers.utils.parseEther(
+            "" + (price2 * 1 + price3 * 1) / ethInUSDC
+          ),
         })
       );
       await Contract.setBaseUri("https://test");

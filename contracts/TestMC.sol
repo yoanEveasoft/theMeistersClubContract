@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.14;
 
 
 import "erc721a/contracts/ERC721A.sol";
@@ -9,10 +9,28 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
+
 import "hardhat/console.sol";
 
-interface ITwap {
-    function getPrice(address tokenIn, uint128 amountIn) external  returns (uint);
+library StructLib {
+    struct Slot{
+        uint160 sqrtPriceX96;
+        int24 tick;
+        uint16 observationIndex;
+        uint16 observationCardinality;
+        uint16 observationCardinalityNext;
+        uint8 feeProtocol;
+        bool unlocked;
+    }
+    
+    struct Observe {
+        int56[]  tickCumulatives;
+        uint160[] secondsPerLiquidityCumulativeX128s;
+    }
+}
+interface IUniswapPrice {
+    function slot0() view external returns (StructLib.Slot memory);
+     function observe(uint32[] memory secondsAgo) view external returns (StructLib.Observe memory);
 }
 
 
@@ -102,6 +120,17 @@ contract TestMC is ERC721A, Ownable  {
         isRevealed = true;
     }
 
+       function getPrice() public view  returns (uint160) {
+        StructLib.Slot memory slot = IUniswapPrice(twapContract).slot0();
+        return slot.sqrtPriceX96;
+    } 
+
+       function getObserve(uint32[] memory secondsAgo) public view  returns (int56[] memory) {
+         StructLib.Observe memory observe = IUniswapPrice(twapContract).observe(secondsAgo);
+         return observe.tickCumulatives;
+    } 
+
+
     // Function to change the supply of the selected categories
     function changeSupply( uint256[] calldata newSupplies) external onlyOwner{
         for (uint256 i = 0; i < 3 ; i++){
@@ -131,9 +160,6 @@ contract TestMC is ERC721A, Ownable  {
             }
     }
 
-      
- 
-    
     // Function to mint NFTs for giveaway and partnerships
     function mintByOwner(address _to, uint NFTtier) public onlyOwner {
         require(NFTtier < 4 && 0 < NFTtier, "Category is wrong");   
@@ -146,7 +172,6 @@ contract TestMC is ERC721A, Ownable  {
         _safeMint(_to, 1);
     }
 
-    
     // Function to mint all NFTs for giveaway and partnerships
     function mintMultipleByOwner(address[] memory _to, uint256[] calldata NFTtier) public onlyOwner {
         for (uint256 i = 0; i < _to.length; i++) {
@@ -167,14 +192,17 @@ contract TestMC is ERC721A, Ownable  {
        uint256[] calldata _numOfTokens,
        bytes32[] calldata _proof
     ) external payable  isContractPresale {
-        require(MerkleProof.verify(_proof, _root, keccak256(abi.encode(msg.sender))), "Not whitelisted");
-        uint256 totalPrice = categories[1].NFTPrice.mul(_numOfTokens[0]).add(categories[2].NFTPrice.mul(_numOfTokens[1])).add(categories[3].NFTPrice.mul(_numOfTokens[2]));
-        uint ethInUSDT = ITwap(twapContract).getPrice(token1, decimals1);
-        require(
-            totalPrice <= msg.value * ethInUSDT,
+       require(MerkleProof.verify(_proof, _root, keccak256(abi.encode(msg.sender))), "Not whitelisted");
+        uint256 totalPrice = categories[1].NFTPrice * _numOfTokens[0] + categories[2].NFTPrice * _numOfTokens[1] + categories[3].NFTPrice * _numOfTokens[2];
+        uint256 ratioX192 = uint256(getPrice())*getPrice();
+        uint256 ethInUSDC = ((10 ** 12) * (2 ** 192)) / (ratioX192);
+         require(
+            totalPrice <= msg.value * ethInUSDC,
             "Ether value sent is not correct"
-        );
+        ); 
        
+
+
         for (uint256 i = 0; i < 3 ; i++){
             require((categories[i + 1].whitelistSupply > categories[i + 1].counterWhitelistSupply +_numOfTokens[i]), "the presale max is reached for this nft tier");
         }
@@ -192,21 +220,23 @@ contract TestMC is ERC721A, Ownable  {
 
     // function for regular mint
    function mintNFT(uint256[] calldata _numOfTokens ) public payable isContractPublicSale {
-       uint256 totalPrice = categories[1].NFTPrice.mul(_numOfTokens[0]).add(categories[2].NFTPrice.mul(_numOfTokens[1])).add(categories[3].NFTPrice.mul(_numOfTokens[2]));
-       uint ethInUSDT = ITwap(twapContract).getPrice(token1, decimals1);
-        require(
-            totalPrice <= msg.value * ethInUSDT,
+        uint256 totalPrice = categories[1].NFTPrice * _numOfTokens[0] + categories[2].NFTPrice * _numOfTokens[1] + categories[3].NFTPrice * _numOfTokens[2];
+        uint256 ratioX192 = uint256(getPrice())*getPrice();
+        uint256 ethInUSDC = ((10 ** 12) * (2 ** 192)) / (ratioX192);
+            require(
+            totalPrice <= msg.value * ethInUSDC,
             "Ether value sent is not correct"
-        );
-        for (uint256 i = 0; i < 3 ; i++){
+        ); 
+        
+      for (uint256 i = 0; i < 3 ; i++){
             require((categories[i + 1].maxSupply > categories[i + 1].counterSupply + categories[i + 1].counterWhitelistSupply +_numOfTokens[i]), "the sale max is reached for this nft tier" );
         }
         for (uint256 i = 1; i < 4; i++){
-               if(_numOfTokens[i-1] != 0){
-            for(uint256 j = 0; j <  _numOfTokens[i-1]; j++){
-            categories[i].counterSupply ++;
-            NFTcategory[totalSupply()] = i;
-             }
+            if(_numOfTokens[i-1] != 0){
+                for(uint256 j = 0; j <  _numOfTokens[i-1]; j++){
+                    categories[i].counterSupply ++;
+                    NFTcategory[totalSupply()] = i;
+                }
              _safeMint(msg.sender, _numOfTokens[i-1]);
         }
     }
