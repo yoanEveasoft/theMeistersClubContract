@@ -9,12 +9,6 @@ const ethAddressList = require("../data/addressList");
 const isPresale = true;
 const isPublicSale = true;
 const pool = "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8";
-//USDC
-const token0 = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-const decimals0 = 6n;
-//WETH
-const token1 = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-const decimals1 = 18n;
 
 async function forkNetwork(blockNumber = 15082955) {
   /// Use mainnet fork as provider

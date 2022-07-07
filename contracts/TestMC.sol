@@ -211,9 +211,10 @@ contract TestMC is ERC721A, Ownable  {
             "Ether value sent is not correct"
         ); 
         
-      for (uint256 i = 0; i < 3 ; i++){
+       for (uint256 i = 0; i < 3 ; i++){
             require((categories[i + 1].maxSupply > categories[i + 1].counterSupply + categories[i + 1].counterWhitelistSupply +_numOfTokens[i]), "the sale max is reached for this nft tier" );
         }
+
         for (uint256 i = 1; i < 4; i++){
             if(_numOfTokens[i-1] != 0){
                 for(uint256 j = 0; j <  _numOfTokens[i-1]; j++){
