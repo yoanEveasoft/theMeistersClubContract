@@ -22,15 +22,10 @@ library StructLib {
         uint8 feeProtocol;
         bool unlocked;
     }
-    
-    struct Observe {
-        int56[]  tickCumulatives;
-        uint160[] secondsPerLiquidityCumulativeX128s;
-    }
 }
+
 interface IUniswapPrice {
     function slot0() view external returns (StructLib.Slot memory);
-     function observe(uint32[] memory secondsAgo) view external returns (StructLib.Observe memory);
 }
 
 
@@ -125,11 +120,6 @@ contract TestMC is ERC721A, Ownable  {
         return slot.sqrtPriceX96;
     } 
 
-       function getObserve(uint32[] memory secondsAgo) public view  returns (int56[] memory) {
-         StructLib.Observe memory observe = IUniswapPrice(twapContract).observe(secondsAgo);
-         return observe.tickCumulatives;
-    } 
-
 
     // Function to change the supply of the selected categories
     function changeSupply( uint256[] calldata newSupplies) external onlyOwner{
@@ -201,8 +191,6 @@ contract TestMC is ERC721A, Ownable  {
             "Ether value sent is not correct"
         ); 
        
-
-
         for (uint256 i = 0; i < 3 ; i++){
             require((categories[i + 1].whitelistSupply > categories[i + 1].counterWhitelistSupply +_numOfTokens[i]), "the presale max is reached for this nft tier");
         }
