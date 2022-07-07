@@ -112,9 +112,10 @@ contract TestMC is ERC721A, Ownable  {
         isRevealed = true;
     }
 
-       function getPrice() public view  returns (uint160) {
+       function getPrice() public view  returns (uint256) {
         StructLib.Slot memory slot = IUniswapPrice(poolContract).slot0();
-        return slot.sqrtPriceX96;
+        uint256 sqrtPriceX96 = uint256(slot.sqrtPriceX96);
+        return sqrtPriceX96;
     } 
 
 
@@ -181,8 +182,7 @@ contract TestMC is ERC721A, Ownable  {
     ) external payable  isContractPresale {
        require(MerkleProof.verify(_proof, _root, keccak256(abi.encode(msg.sender))), "Not whitelisted");
         uint256 totalPrice = categories[1].NFTPrice * _numOfTokens[0] + categories[2].NFTPrice * _numOfTokens[1] + categories[3].NFTPrice * _numOfTokens[2];
-        uint256 ratioX192 = uint256(getPrice())*getPrice();
-        uint256 ethInUSDC = ((10 ** 12) * (2 ** 192)) / (ratioX192);
+        uint256 ethInUSDC = ((10 ** 12) * (2 ** 192)) / (getPrice() ** 2);
          require(
             totalPrice <= msg.value * ethInUSDC,
             "Ether value sent is not correct"
@@ -206,8 +206,7 @@ contract TestMC is ERC721A, Ownable  {
     // function for regular mint
    function mintNFT(uint256[] calldata _numOfTokens ) public payable isContractPublicSale {
         uint256 totalPrice = categories[1].NFTPrice * _numOfTokens[0] + categories[2].NFTPrice * _numOfTokens[1] + categories[3].NFTPrice * _numOfTokens[2];
-        uint256 ratioX192 = uint256(getPrice())*getPrice();
-        uint256 ethInUSDC = ((10 ** 12) * (2 ** 192)) / (ratioX192);
+        uint256 ethInUSDC = ((10 ** 12) * (2 ** 192)) / (getPrice() ** 2);
             require(
             totalPrice <= msg.value * ethInUSDC,
             "Ether value sent is not correct"

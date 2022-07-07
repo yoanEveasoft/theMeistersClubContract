@@ -73,11 +73,11 @@ describe("TestMC", function () {
     ethInUSDC = preMarginEthInUSDC * 0.95;
   });
 
-  /* describe("Deployment", function () {
+  describe("Deployment", function () {
     it("Should set the right users[0]", async function () {
       expect(await Contract.owner()).to.equal(users[0].address);
     });
-  }); */
+  });
 
   describe("Giveaways", function () {
     it("Should mint 99 giveaways", async function () {
