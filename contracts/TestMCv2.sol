@@ -154,7 +154,7 @@ contract TestMCV2 is ERC721A, Ownable  {
         uint256 totalPrice = nftPrice * _numOfTokens ;
         uint256 ethInUSDC = ((10 ** 12) * (2 ** 192)) / (getPrice() ** 2);
          require(
-            totalPrice <= msg.value * ethInUSDC,
+            (totalPrice/10**6) <= ((msg.value * ethInUSDC)/10**18),
             "Ether value sent is not correct"
         ); 
         _safeMint(msg.sender, _numOfTokens);
@@ -166,7 +166,7 @@ contract TestMCV2 is ERC721A, Ownable  {
         uint256 totalPrice = nftPrice * _numOfTokens ;
         uint256 ethInUSDC = ((10 ** 12) * (2 ** 192)) / (getPrice() ** 2);
         require(
-            totalPrice <= msg.value * ethInUSDC,
+            (totalPrice/10**6) <= ((msg.value * ethInUSDC)/10**18),
             "Ether value sent is not correct"
         ); 
         _safeMint(msg.sender, _numOfTokens);

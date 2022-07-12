@@ -47,11 +47,13 @@ describe("TestMCV2", function () {
 
     const contract = await ethers.getContractFactory("TestMCV2");
     Contract = await contract.deploy("/test", pool);
-    price = await Contract.nftPrice();
+    priceinUSDC = await Contract.nftPrice();
 
     sqrtPriceX96 = await Contract.getPrice();
     preMarginEthInUSDC = (10 ** 12 * 2 ** 192) / sqrtPriceX96 ** 2;
     ethInUSDC = preMarginEthInUSDC * 0.98;
+
+    price = priceinUSDC / (ethInUSDC * 10 ** 6);
   });
 
   describe("Deployment", function () {
@@ -117,11 +119,21 @@ describe("TestMCV2", function () {
         await Contract.setPresaleActive();
         expect(
           await Contract.presaleMint(2, proof, {
-            value: await ethers.utils.parseEther("" + (price * 2) / ethInUSDC),
+            value: await ethers.utils.parseEther("" + price * 2),
           })
         );
         expect(await Contract.ownerOf(0)).to.equal(users[0].address);
         expect(await Contract.totalSupply()).to.equal(2);
+      });
+
+      it("Should fail if incorrect Price", async function () {
+        await Contract.setPresaleActive();
+        expect(
+          await Contract.presaleMint(3, proof, {
+            value: await ethers.utils.parseEther("" + price * 2),
+          })
+        ).to.be.revertedWith("Ether value sent is not correct");
+        expect(await Contract.totalSupply()).to.equal(0);
       });
 
       it("Should fail if Whitelist supply is reached", async function () {
@@ -129,13 +141,13 @@ describe("TestMCV2", function () {
         await Contract.changeWhitelistSupply(20);
         expect(
           await Contract.connect(users[0]).presaleMint(21, proof, {
-            value: await ethers.utils.parseEther("" + (price * 21) / ethInUSDC),
+            value: await ethers.utils.parseEther("" + price * 21),
           })
         ).to.be.revertedWith("the presale max is reached");
       });
     });
 
-  /*   isPublicSale &&
+  isPublicSale &&
     describe("Public Sale", async function () {
       beforeEach(async function () {
         await Contract.setIsActive();
@@ -144,24 +156,24 @@ describe("TestMCV2", function () {
       it("Should fail if Presale is active", async function () {
         await Contract.setPresaleActive();
         await expect(
-          Contract.connect(users[1]).mintNFT([1, 0, 0], {
-            value: await (price1 * 1).toString(),
+          Contract.connect(users[1]).mintNFT(1, {
+            value: await ethers.utils.parseEther("" + price * 1),
           })
         ).to.be.revertedWith("Presale is still active");
       });
 
       it("Should fail if Ether value sent is not correct", async function () {
         await expect(
-          Contract.connect(users[1]).mintNFT([4, 0, 0], {
-            value: await (price1 * 1).toString(),
+          Contract.connect(users[1]).mintNFT(4, {
+            value: await ethers.utils.parseEther("" + price * 3),
           })
         ).to.be.revertedWith("Ether value sent is not correct");
       });
 
       it("Should mint 2 NFT", async function () {
         expect(
-          await Contract.connect(users[1]).mintNFT([2, 0, 0], {
-            value: await ethers.utils.parseEther("" + (price1 * 2) / ethInUSDC),
+          await Contract.connect(users[1]).mintNFT(2, {
+            value: await ethers.utils.parseEther("" + price * 2),
           })
         );
         expect(await Contract.ownerOf(0)).to.equal(users[1].address);
@@ -171,73 +183,54 @@ describe("TestMCV2", function () {
 
       it("Should mint multiple differents NFT", async function () {
         expect(
-          await Contract.connect(users[0]).mintNFT([2, 1, 1], {
-            value: await ethers.utils.parseEther(
-              "" + (price1 * 2 + price2 * 1 + price3 * 1) / ethInUSDC
-            ),
+          await Contract.connect(users[0]).mintNFT(4, {
+            value: await ethers.utils.parseEther("" + price * 4),
           })
         );
         expect(await Contract.ownerOf(0)).to.equal(users[0].address);
         expect(await Contract.totalSupply()).to.equal(4);
-        expect(await (await Contract.categories(1))["counterSupply"]).to.equal(
-          2
-        );
-        expect(await (await Contract.categories(2))["counterSupply"]).to.equal(
-          1
-        );
-        expect(await (await Contract.categories(3))["counterSupply"]).to.equal(
-          1
-        );
-        expect(await Contract.NFTcategory(0)).to.equal(1);
-        expect(await Contract.NFTcategory(3)).to.equal(3);
       });
 
       it("Should fail if supply is reached", async function () {
-        await Contract.changeSupply([10, 0, 0]);
+        await Contract.changeSupply(10);
         await network.provider.send("evm_increaseTime", [90]);
         await network.provider.send("evm_mine");
         expect(
-          await Contract.connect(users[0]).mintNFT([11, 0, 0], {
-            value: await ethers.utils.parseEther(
-              "" + (price1 * 11) / ethInUSDC
-            ),
+          await Contract.connect(users[0]).mintNFT(11, {
+            value: await ethers.utils.parseEther("" + price * 11),
           })
         ).to.be.revertedWith("the sale max is reached for this nft tier");
       });
 
       it("Should withdraw the money", async function () {
         expect(
-          await Contract.connect(users[1]).mintNFT([1, 0, 0], {
-            value: await ethers.utils.parseEther("" + (price1 * 1) / ethInUSDC),
+          await Contract.connect(users[1]).mintNFT(1, {
+            value: await ethers.utils.parseEther("" + price),
           })
         );
         expect(
-          await Contract.connect(users[2]).mintNFT([0, 1, 1], {
-            value: await ethers.utils.parseEther(
-              "" + (price2 * 1 + price3 * 1) / ethInUSDC
-            ),
+          await Contract.connect(users[2]).mintNFT(2, {
+            value: await ethers.utils.parseEther("" + price * 2),
           })
         );
         expect(
-          await Contract.connect(users[2]).mintNFT([0, 2, 0], {
-            value: await ethers.utils.parseEther("" + (price2 * 2) / ethInUSDC),
+          await Contract.connect(users[2]).mintNFT(2, {
+            value: await ethers.utils.parseEther("" + price * 2),
           })
         );
         expect(
-          await Contract.connect(users[1]).mintNFT([1, 0, 0], {
-            value: await ethers.utils.parseEther("" + (price1 * 1) / ethInUSDC),
+          await Contract.connect(users[1]).mintNFT(1, {
+            value: await ethers.utils.parseEther("" + price * 1),
           })
         );
         expect(
-          await Contract.connect(users[1]).mintNFT([1, 0, 0], {
-            value: await ethers.utils.parseEther("" + (price1 * 1) / ethInUSDC),
+          await Contract.connect(users[1]).mintNFT(1, {
+            value: await ethers.utils.parseEther("" + price * 2),
           })
         );
         expect(
-          await Contract.connect(users[2]).mintNFT([2, 1, 1], {
-            value: await ethers.utils.parseEther(
-              "" + (price1 * 2 + price2 * 1 + price3 * 1) / ethInUSDC
-            ),
+          await Contract.connect(users[2]).mintNFT(4, {
+            value: await ethers.utils.parseEther("" + price * 4),
           })
         );
 
@@ -255,7 +248,7 @@ describe("TestMCV2", function () {
         await expect(
           (await (await provider.getBalance(Contract.address)).toString()) /
             1000000000000000000
-        ).to.equal(284.9762192277335);
+        ).to.equal(7.748500778806708);
 
         await Contract.connect(users[0]).withdraw();
 
@@ -268,7 +261,7 @@ describe("TestMCV2", function () {
             1000000000000000000
         ).to.equal(0);
       });
-    }); */
+    });
 
   describe("change supply", function () {
     it("Should change the NFT supply", async function () {
@@ -298,12 +291,12 @@ describe("TestMCV2", function () {
       await Contract.setIsActive();
       await expect(
         await Contract.connect(users[1]).mintNFT(1, {
-          value: await ethers.utils.parseEther("" + (price * 1) / ethInUSDC),
+          value: await ethers.utils.parseEther("" + price),
         })
       );
       await expect(
         await Contract.connect(users[1]).mintNFT(2, {
-          value: await ethers.utils.parseEther("" + (price * 2) / ethInUSDC),
+          value: await ethers.utils.parseEther("" + price * 2),
         })
       );
       await Contract.setBaseUri("https://test");
