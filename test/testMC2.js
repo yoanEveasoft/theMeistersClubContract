@@ -54,7 +54,6 @@ describe("TestMCV2", function () {
     ethInUSDC = preMarginEthInUSDC * 0.98;
 
     price = priceinUSDC / (ethInUSDC * 10 ** 6);
-    console.log(price);
   });
 
   describe("Deployment", function () {
@@ -129,7 +128,7 @@ describe("TestMCV2", function () {
 
       it("Should fail if incorrect Price", async function () {
         await Contract.setPresaleActive();
-        expect(
+        await expect(
           await Contract.presaleMint(3, proof, {
             value: await ethers.utils.parseEther("" + price * 2),
           })
@@ -249,7 +248,7 @@ describe("TestMCV2", function () {
         await expect(
           (await (await provider.getBalance(Contract.address)).toString()) /
             1000000000000000000
-        ).to.equal(7.748500778806708);
+        ).to.equal(8.3885123798864);
 
         await Contract.connect(users[0]).withdraw();
 
@@ -284,6 +283,7 @@ describe("TestMCV2", function () {
       expect(await Contract.nftPrice()).to.equal(750 * 10 ** 6);
       await Contract.changePrice(1000);
       expect(await Contract.nftPrice()).to.equal(1000 * 10 ** 6);
+      console.log(await Contract.nftPrice());
     });
   });
 
