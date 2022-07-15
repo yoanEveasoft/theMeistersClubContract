@@ -54,6 +54,7 @@ describe("TestMCV2", function () {
     ethInUSDC = preMarginEthInUSDC * 0.98;
 
     price = priceinUSDC / (ethInUSDC * 10 ** 6);
+    console.log(price);
   });
 
   describe("Deployment", function () {

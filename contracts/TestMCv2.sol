@@ -95,17 +95,17 @@ contract TestMCV2 is ERC721A, Ownable  {
     }
 
     // Mainnet
-    // function getPrice() public view  returns (uint256) {
-    //     StructLib.Slot memory slot = IUniswapPrice(poolContract).slot0();
-    //     uint256 sqrtPriceX96 = uint256(slot.sqrtPriceX96);
-    //     return sqrtPriceX96;
-    // } 
-
-    // Test
-      function getPrice() public pure  returns (uint256) {
-        uint256 sqrtPriceX96 = 2301336933455729618606400047051907;
+    function getPrice() public view  returns (uint256) {
+        StructLib.Slot memory slot = IUniswapPrice(poolContract).slot0();
+        uint256 sqrtPriceX96 = uint256(slot.sqrtPriceX96);
         return sqrtPriceX96;
     } 
+
+    // Test
+    //   function getPrice() public pure  returns (uint256) {
+    //     uint256 sqrtPriceX96 = 2301336933455729618606400047051907;
+    //     return sqrtPriceX96;
+    // } 
 
     // Function to change the supply of the selected categories
     function changeSupply( uint256  newSupply) external onlyOwner{

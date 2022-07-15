@@ -4,7 +4,7 @@ require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-gas-reporter");
 
-const { PRIVATE_KEY } = process.env;
+const { PRIVATE_KEY, RINKEBY_URL, ETHEREUM_URL, POLYGON_URL } = process.env;
 
 module.exports = {
   solidity: {
@@ -25,15 +25,15 @@ module.exports = {
       ],
     },
     rinkeby: {
-      url: /* "https://eth-rinkeby.alchemyapi.io/v2/LsdjIhhDskpuzoIgg78Rs7BI3mzbdIZJ", */ "https://rinkeby.infura.io/v3/03ce6aff8f9b46b8bb3ebf13b2900c71",
+      url: `${RINKEBY_URL}`,
       accounts: [`0x${PRIVATE_KEY}`],
     },
     ethereum: {
-      url: "https://eth-mainnet.alchemyapi.io/v2/GQuvG_4t-tC23bv60y0LCF7tS9Zj3eq-",
+      url: `${ETHEREUM_URL}`,
       accounts: [`0x${PRIVATE_KEY}`],
     },
     polygon: {
-      url: "https://speedy-nodes-nyc.moralis.io/efad5f42b02dc2f894f286f8/polygon/mumbai",
+      url: `${POLYGON_URL}`,
       accounts: [`0x${PRIVATE_KEY}`],
     },
     /*   mumbai: {
