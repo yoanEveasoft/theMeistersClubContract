@@ -34,10 +34,7 @@ contract TestMCV2 is ERC721A, Ownable  {
     using Strings for uint;
     using SafeMath for uint256;
 
-    event Staked(address owner, uint256 tokenId, uint256 timeframe);
-    event Unstaked(address owner, uint256 tokenId, uint256 timeframe);
 
-    address public stakingContract;
     address public poolContract;
     bytes32 public _root;
     bool public isActive;
@@ -50,19 +47,13 @@ contract TestMCV2 is ERC721A, Ownable  {
     uint256 public nftPrice = 750 * 10 ** 6; // 750 USDC
 
 
-    // Is staked?
-    mapping(uint256 => bool) public isStaked;
-
 
     constructor( string memory _baseURI, address _poolContract ) ERC721A("TestMC", "TESTMC") {
         baseURI = _baseURI;
         poolContract = _poolContract;
     }
 
-    modifier isStakingContract {
-        require(msg.sender == stakingContract);
-        _;
-    }
+  
     modifier isContractPublicSale {
         require(isActive == true, "Contract is not active");
         require(isPresaleActive == false, "Presale is still active");
@@ -173,27 +164,6 @@ contract TestMCV2 is ERC721A, Ownable  {
       
    }
 
-    // Stake function, to stake ur function
-    function stakeNFT(uint256 tokenId) external isStakingContract {
-        isStaked[tokenId] = true;
-        emit Staked(msg.sender, tokenId, block.timestamp);
-    }
-
-    // Unstake funtion, to unstake ur function
-    function unstakeNFT(uint256 tokenId) external isStakingContract {
-        isStaked[tokenId] = false;
-        emit Unstaked(msg.sender, tokenId, block.timestamp);
-    }
-
-
-    // Set the NFT not available for transfer if it's staked
-    function _beforeTokenTransfers(address from,
-        address to,
-        uint256 startTokenId,
-        uint256 quantity) internal override { 
-        super._beforeTokenTransfers(from, to, startTokenId, quantity);
-        require(isStaked[startTokenId] == false, "your NFT is not available for transfer");
-    }
 
     // tokenURI is the link to the metadatas
     function tokenURI(uint _tokenId) public view virtual override returns (string memory) {
